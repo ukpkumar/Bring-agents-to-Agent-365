@@ -449,6 +449,46 @@ Paste the following JSON into `examples\mfa-lockout.json`, then save and close N
 }
 ```
 
+Add a second ticket for a VPN/network issue. Run this in **PowerShell** from the project root:
+
+```powershell
+New-Item examples\vpn-degraded.json
+notepad examples\vpn-degraded.json
+```
+
+Paste the following JSON into `examples\vpn-degraded.json`, then save and close Notepad:
+
+```json
+{
+  "id": "INC-1043",
+  "requester": "Sam Patel",
+  "requester_email": "sam@contoso.example",
+  "title": "VPN is very slow",
+  "description": "VPN latency is high and internal apps keep timing out.",
+  "affected_service": "vpn"
+}
+```
+
+Add a third ticket for a security/phishing issue. Run this in **PowerShell** from the project root:
+
+```powershell
+New-Item examples\phishing-report.json
+notepad examples\phishing-report.json
+```
+
+Paste the following JSON into `examples\phishing-report.json`, then save and close Notepad:
+
+```json
+{
+  "id": "SEC-2041",
+  "requester": "Alex Kim",
+  "requester_email": "alex@contoso.example",
+  "title": "Suspicious phishing email",
+  "description": "I received a suspicious email asking me to open an invoice link and sign in again.",
+  "affected_service": "email"
+}
+```
+
 ### Run the local agent
 
 Run these commands from the **project root**:
@@ -477,6 +517,29 @@ python -m it_agent --ticket .\examples\mfa-lockout.json --approve
 Expected behavior:
 
 - The simulated MFA reset runs.
+
+Test the VPN scenario:
+
+```powershell
+python -m it_agent --ticket .\examples\vpn-degraded.json
+```
+
+Expected behavior:
+
+- The ticket is classified as a network issue.
+- The agent checks mock VPN service health.
+
+Test the phishing scenario:
+
+```powershell
+python -m it_agent --ticket .\examples\phishing-report.json
+```
+
+Expected behavior:
+
+- The ticket is classified as a security issue.
+- Safe checks run.
+- Any risky remediation should require approval before execution.
 
 At this point, you have a working local third-party agent. The next part is bringing it into Agent 365.
 
