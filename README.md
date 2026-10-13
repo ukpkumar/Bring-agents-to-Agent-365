@@ -94,13 +94,14 @@ mkdir examples
 mkdir tests
 ```
 
-Create a basic project file:
+Create a basic project file. Run this in **PowerShell** from the project root:
 
 ```powershell
 New-Item pyproject.toml
+notepad pyproject.toml
 ```
 
-Add:
+Paste the following content into `pyproject.toml`, then save and close Notepad:
 
 ```toml
 [project]
@@ -115,13 +116,16 @@ dependencies = [
 
 ### Define the ticket and result models
 
-Create:
+Create the file. Run this in **PowerShell** from the project root:
 
-```text
-src\it_agent\models.py
+```powershell
+New-Item src\it_agent\models.py
+notepad src\it_agent\models.py
 ```
 
 The agent needs a ticket input, a classification result, planned actions, and tool results.
+
+Paste the following Python code into `src\it_agent\models.py`, then save and close Notepad:
 
 ```python
 from dataclasses import dataclass, field
@@ -194,13 +198,16 @@ class ToolResult:
 
 ### Add mock IT tools
 
-Create:
+Create the file. Run this in **PowerShell** from the project root:
 
-```text
-src\it_agent\tools.py
+```powershell
+New-Item src\it_agent\tools.py
+notepad src\it_agent\tools.py
 ```
 
 Use mock tools so the exercise is safe to run locally.
+
+Paste the following Python code into `src\it_agent\tools.py`, then save and close Notepad:
 
 ```python
 from .models import ToolResult
@@ -246,11 +253,14 @@ def create_ticket_note(ticket_id: str, note: str) -> ToolResult:
 
 ### Add the agent logic
 
-Create:
+Create the file. Run this in **PowerShell** from the project root:
 
-```text
-src\it_agent\agent.py
+```powershell
+New-Item src\it_agent\agent.py
+notepad src\it_agent\agent.py
 ```
+
+Paste the following Python code into `src\it_agent\agent.py`, then save and close Notepad:
 
 ```python
 from .models import ActionSafety, Classification, PlannedAction, Severity, Ticket, TicketCategory
@@ -326,11 +336,14 @@ class ItHelpdeskAgent:
 
 ### Add a command-line entry point
 
-Create:
+Create the file. Run this in **PowerShell** from the project root:
 
-```text
-src\it_agent\__main__.py
+```powershell
+New-Item src\it_agent\__main__.py
+notepad src\it_agent\__main__.py
 ```
+
+Paste the following Python code into `src\it_agent\__main__.py`, then save and close Notepad:
 
 ```python
 import argparse
@@ -352,11 +365,14 @@ result = ItHelpdeskAgent().handle_ticket(ticket, approved=args.approve)
 print(json.dumps(asdict(result) if hasattr(result, "__dataclass_fields__") else result, indent=2, default=str))
 ```
 
-Also create:
+Also create the package initializer. Run this in **PowerShell** from the project root:
 
-```text
-src\it_agent\__init__.py
+```powershell
+New-Item src\it_agent\__init__.py
+notepad src\it_agent\__init__.py
 ```
+
+Paste the following Python code into `src\it_agent\__init__.py`, then save and close Notepad:
 
 ```python
 from .agent import ItHelpdeskAgent
@@ -364,11 +380,14 @@ from .agent import ItHelpdeskAgent
 
 ### Add a sample ticket
 
-Create:
+Create the sample ticket file. Run this in **PowerShell** from the project root:
 
-```text
-examples\mfa-lockout.json
+```powershell
+New-Item examples\mfa-lockout.json
+notepad examples\mfa-lockout.json
 ```
+
+Paste the following JSON into `examples\mfa-lockout.json`, then save and close Notepad:
 
 ```json
 {
@@ -416,13 +435,14 @@ At this point, you have a working local third-party agent. The next part is brin
 
 A command-line agent is useful for testing, but a browser interface makes the scenario easier to demo. You can add a lightweight local web server using only Python's standard library.
 
-Create:
+Create the file. Run this in **PowerShell** from the project root:
 
-```text
-src\it_agent\web.py
+```powershell
+New-Item src\it_agent\web.py
+notepad src\it_agent\web.py
 ```
 
-Add:
+Paste the following Python code into `src\it_agent\web.py`, then save and close Notepad:
 
 ```python
 import json
