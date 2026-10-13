@@ -1351,13 +1351,32 @@ Important: the `token_resolver` above is only the resolver hook. For real Agent 
 
 ### Option 2.5: Add Agent 365 baggage
 
-Agent 365 needs tenant and agent identity context on telemetry spans.
+This is **Python code**, not a PowerShell command.
 
-Conceptually:
+Agent 365 needs tenant and agent identity context on telemetry spans. In this lab, add baggage around the line that runs the agent.
+
+Open the command-line entry point:
+
+```powershell
+notepad src\it_agent\__main__.py
+```
+
+Find this line:
 
 ```python
+result = ItHelpdeskAgent().handle_ticket(ticket, approved=args.approve)
+```
+
+Replace it with this pattern:
+
+```python
+import os
+
 from microsoft.opentelemetry.a365.core import BaggageBuilder
 
+
+tenant_id = os.getenv("AGENT365OBSERVABILITY__TENANTID", "<your-tenant-id>")
+agent_id = os.getenv("AGENT365OBSERVABILITY__AGENTID", "<your-agent-id>")
 
 with (
     BaggageBuilder()
@@ -1365,31 +1384,103 @@ with (
     .agent_id(agent_id)
     .build()
 ):
-    # Create invoke_agent and tool spans here.
-    pass
+    result = ItHelpdeskAgent().handle_ticket(ticket, approved=args.approve)
 ```
 
-Without baggage, spans may not correlate to the registered agent.
+If you use the optional browser UI, open:
+
+```powershell
+notepad src\it_agent\web.py
+```
+
+Find the API handler line that calls:
+
+```python
+result = ItHelpdeskAgent().handle_ticket(ticket, approved=approved)
+```
+
+Wrap that line with the same `BaggageBuilder` pattern.
+
+Without baggage, spans may not correlate to the registered Agent 365 identity.
 
 ### Option 2.6: Add an `invoke_agent` span
 
-Wrap the main agent run in a root `invoke_agent` span:
+This is also **Python code**.
+
+The `invoke_agent` span should wrap one complete agent request. In this lab, the cleanest place is still `src\it_agent\__main__.py`, around the same `handle_ticket(...)` call.
+
+Open:
+
+```powershell
+notepad src\it_agent\__main__.py
+```
+
+The final structure should look like this conceptually:
 
 ```text
 ticket received
+  -> Agent 365 baggage context starts
   -> invoke_agent span starts
   -> classify ticket
   -> plan actions
   -> call tools
   -> produce response
   -> invoke_agent span ends
+  -> Agent 365 baggage context ends
 ```
 
-This root span is important for Agent 365 product views.
+The Microsoft OpenTelemetry package provides `InvokeAgentScope` and related contract classes. The exact constructor signatures can vary by package version, so treat this as the placement pattern:
+
+```python
+with BaggageBuilder().tenant_id(tenant_id).agent_id(agent_id).build():
+    # Start invoke_agent span here.
+    result = ItHelpdeskAgent().handle_ticket(ticket, approved=args.approve)
+    # Record output and close invoke_agent span here.
+```
+
+This root span is important for Agent 365 product views. Without a valid root `invoke_agent` span, traces may be harder to find or may not appear in the main Agent 365 surfaces.
 
 ### Option 2.7: Add tool execution spans
 
-Wrap each tool call in a tool span:
+This is **Python code** inside the agent implementation.
+
+In this lab, tool calls happen in:
+
+```text
+src\it_agent\agent.py
+```
+
+Open:
+
+```powershell
+notepad src\it_agent\agent.py
+```
+
+Find the section that calls tools, for example:
+
+```python
+if action.name == "check_user_status":
+    results.append(check_user_status(action.args["email"]))
+elif action.name == "check_service_health":
+    results.append(check_service_health(action.args["service"]))
+elif action.name == "reset_mfa":
+    results.append(reset_mfa(action.args["email"]))
+elif action.name == "create_ticket_note":
+    results.append(create_ticket_note(action.args["ticket_id"], action.args["note"]))
+```
+
+Each of those calls should be wrapped in an Agent 365 tool execution span.
+
+Conceptually:
+
+```python
+# Start ExecuteToolScope for action.name.
+# Run the tool.
+# Record the tool result.
+# Close ExecuteToolScope.
+```
+
+The tool span should be added around these tools:
 
 ```text
 check_user_status
@@ -1405,6 +1496,15 @@ Each span should include:
 - Success or failure
 - Error details, if any
 - Response summary
+
+The important placement rule is:
+
+```text
+invoke_agent span in __main__.py or web.py
+  -> tool execution spans inside agent.py
+```
+
+That gives Agent 365 a full parent/child trace: one agent run with individual tool calls underneath it.
 
 ### Option 2.8: Add SDK tooling only if the agent needs Microsoft 365 tools
 
