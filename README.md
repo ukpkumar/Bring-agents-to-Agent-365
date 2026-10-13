@@ -1291,23 +1291,59 @@ This is the supported observability path. Do not use the deprecated Agent 365 Ob
 
 ### Option 2.4: Initialize Microsoft OpenTelemetry early in the app
 
-Add initialization code near the start of the application, before the agent handles requests.
+This is **Python code**, not a PowerShell command. Do not paste this directly into PowerShell.
 
-Conceptually:
+Add this code to your agent application so it runs near startup, before the agent handles requests.
+
+For this lab agent, create a new file:
+
+```powershell
+New-Item src\it_agent\observability.py
+notepad src\it_agent\observability.py
+```
+
+Paste this starter code into `src\it_agent\observability.py`:
 
 ```python
 from microsoft.opentelemetry import use_microsoft_opentelemetry
 
 
-use_microsoft_opentelemetry(
-    enable_a365=True,
-    a365_token_resolver=token_resolver,
-    a365_use_s2s_endpoint=True,
-    a365_enable_observability_exporter=True,
-)
+_token_cache: dict[str, str] = {}
+
+
+def token_resolver(agent_id: str, tenant_id: str) -> str | None:
+    return _token_cache.get(f"{agent_id}:{tenant_id}")
+
+
+def configure_observability() -> None:
+    use_microsoft_opentelemetry(
+        enable_a365=True,
+        a365_token_resolver=token_resolver,
+        a365_use_s2s_endpoint=True,
+        a365_enable_observability_exporter=True,
+    )
 ```
 
-The `token_resolver` must return a valid Agent 365 observability token for the agent and tenant. For standard blueprint agents, Microsoft recommends the S2S route.
+Then call it from each application entry point before the agent runs.
+
+For the command-line app, open:
+
+```powershell
+notepad src\it_agent\__main__.py
+```
+
+Add this near the top, before the ticket is handled:
+
+```python
+from .observability import configure_observability
+
+
+configure_observability()
+```
+
+If you use the optional browser UI, also call it from `src\it_agent\web.py` before the web server starts.
+
+Important: the `token_resolver` above is only the resolver hook. For real Agent 365 export, it must return a valid Agent 365 observability token for the agent and tenant. For standard blueprint agents, Microsoft recommends the S2S route. That means you also need token acquisition/caching logic before production telemetry can flow.
 
 ### Option 2.5: Add Agent 365 baggage
 
