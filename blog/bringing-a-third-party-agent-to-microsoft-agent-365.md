@@ -16,6 +16,35 @@ AI agents are moving quickly from experiments to business-critical systems. That
 
 Microsoft Agent 365 helps answer that question by bringing agents into a unified enterprise control plane. In this post, I walk through a practical step-by-step process for bringing a third-party or custom agent into Agent 365.
 
+## Why bring agents to Microsoft Agent 365?
+
+Organizations are beginning to use agents across IT, sales, finance, HR, engineering, and customer operations. Many of those agents are built outside Microsoft platforms, often using open-source frameworks, third-party SDKs, or custom code. Without a control plane, these agents can become difficult for IT and security teams to manage.
+
+Bringing an agent to Agent 365 helps answer practical enterprise questions:
+
+- Who owns this agent?
+- What is the agent allowed to do?
+- What tools can it call?
+- What data can it access?
+- Is the agent active, stale, or ownerless?
+- Can security teams investigate its activity?
+- Can risky actions be reviewed, blocked, or governed?
+- Can the agent be managed through existing Microsoft Entra, Defender, Purview, and Microsoft 365 admin processes?
+
+The goal is not just to make the agent work. The goal is to make the agent acceptable for enterprise deployment.
+
+Agent 365 gives organizations a way to:
+
+- Register agents as known enterprise assets
+- Represent agents with Microsoft Entra-backed identities
+- Apply governance and lifecycle controls
+- Observe runtime activity and tool usage
+- Support security investigation through Microsoft Defender
+- Add data protection and compliance controls through Microsoft Purview
+- Govern access to Microsoft 365 tools through Work IQ MCP capabilities
+
+In short, Agent 365 helps move agents from isolated demos to governed, observable, and manageable enterprise systems.
+
 The example scenario is an external IT helpdesk triage agent. The agent classifies support tickets, checks mock IT systems, separates safe actions from approval-required actions, and can use OpenAI for conversation. The same pattern applies to agents built with OpenAI Agents SDK, LangChain, CrewAI, LlamaIndex, custom Python or Node.js runtimes, and other third-party frameworks.
 
 ## Exercise overview
