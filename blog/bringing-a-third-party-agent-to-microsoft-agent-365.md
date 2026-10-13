@@ -809,7 +809,11 @@ cd C:\Agent365Labs\external-it-agent
 
 ## Step 3: Install Agent 365 Skills
 
-Microsoft recommends using Agent 365 Skills from a supported coding assistant because they guide the setup, make code changes, and validate the result.
+This step is needed only if you choose **Option 1: guided setup with Agent 365 Skills** later in the lab.
+
+GitHub Copilot Skills are not the Agent 365 SDK. They are an optional automation helper that can guide setup, edit the project, and validate the result. The actual Agent 365 integration still uses the Agent 365 CLI, Microsoft OpenTelemetry, and Agent 365 SDK packages.
+
+If you prefer to integrate manually, skip this step and use **Option 2: manual SDK path**.
 
 Run this from PowerShell. It can be run from any folder:
 
@@ -866,7 +870,29 @@ python -m it_agent --ticket .\examples\mfa-lockout.json
 
 The purpose is to establish a baseline. Agent 365 integration should be additive; it should not change core agent behavior.
 
-## Step 5: Run Agent 365 setup
+## Step 5: Choose your Agent 365 integration option
+
+There are two valid ways to continue.
+
+| Option | Best for | Uses GitHub Copilot Skills? | Uses Agent 365 SDK/OpenTelemetry? |
+|---|---|---:|---:|
+| Option 1: Guided setup with Agent 365 Skills | Labs, demos, first-time onboarding, faster setup | Yes | Yes |
+| Option 2: Manual SDK path | Developers who want full control or cannot use coding assistant skills | No | Yes |
+
+Both options use the same underlying Agent 365 concepts:
+
+- Agent 365 CLI for registration
+- Microsoft Entra Agent ID for identity
+- Microsoft OpenTelemetry for observability
+- Agent 365 SDK packages for tooling or notifications, if needed
+
+GitHub Copilot is not required. It only automates and guides the steps.
+
+## Option 1: Guided setup with Agent 365 Skills
+
+Use this option if you installed the Agent 365 Skills in Step 3.
+
+### Option 1.1: Run Agent 365 setup
 
 Open the project folder in your coding assistant. The current working directory should be the agent root:
 
@@ -890,7 +916,7 @@ Standard agent
 
 Use the AI teammate path only when the agent needs its own Microsoft 365 user account, mailbox, Teams presence, or Outlook/Word notification participation. That path requires Frontier preview.
 
-## Step 6: Register the agent
+### Option 1.2: Register the agent
 
 Stay in the same project folder. Ask the coding assistant:
 
@@ -934,7 +960,7 @@ resourceConsents
 
 If the developer is not a Global Administrator, the CLI may print a consent URL. Send that URL to a Global Administrator to complete tenant-wide consent.
 
-## Step 7: Verify registration
+### Option 1.3: Verify registration
 
 Use the CLI to verify permissions. Run these commands from the **project root**:
 
@@ -966,7 +992,7 @@ https://admin.cloud.microsoft/#/agents/all
 
 At this stage, the agent is registered. That means Agent 365 knows about it. Runtime telemetry is a separate step.
 
-## Step 8: Add Microsoft OpenTelemetry observability
+### Option 1.4: Add Microsoft OpenTelemetry observability
 
 Registration gives identity and governance metadata. Observability makes the agent operationally visible.
 
@@ -1004,7 +1030,7 @@ The observability integration should emit:
 
 The root `invoke_agent` span is important. Without it, spans might be queryable in Defender advanced hunting but not show in the main Agent 365 product surfaces.
 
-## Step 9: Add governed Microsoft 365 tools, if needed
+### Option 1.5: Add governed Microsoft 365 tools, if needed
 
 If the agent needs to read or act on Microsoft 365 data, add Work IQ tools.
 
@@ -1033,7 +1059,7 @@ Use this when the agent needs governed access to:
 
 This step requires the right Microsoft 365 licensing and admin consent. It is skipped when the selected authentication model does not support the required delegated access.
 
-## Step 10: Add Purview DLP, if needed
+### Option 1.6: Add Purview DLP, if needed
 
 If the agent processes sensitive data, add Microsoft Purview checks.
 
@@ -1052,7 +1078,7 @@ Use this for:
 - Compliance audit
 - Blocking risky prompts before LLM calls
 
-## Step 11: Validate the integration
+### Option 1.7: Validate the integration
 
 Use the coding assistant from the **project root** and ask:
 
@@ -1079,6 +1105,180 @@ Validate:
 - Runtime spans are emitted
 - Tool calls are visible, if configured
 - No secrets are committed to source control
+
+## Option 2: Manual SDK path
+
+Use this option if you do not want to use GitHub Copilot Skills. This path uses the same Agent 365 CLI and SDK components, but you make the code/configuration changes yourself.
+
+### Option 2.1: Register the agent with the Agent 365 CLI
+
+Run these commands from the **project root**:
+
+```powershell
+cd C:\Agent365Labs\external-it-agent
+a365 setup requirements
+a365 setup all --agent-name "external-it-helpdesk-agent"
+```
+
+This creates or updates:
+
+- Agent identity blueprint
+- Agent identity in Microsoft Entra
+- Agent registration in Agent 365
+- Permission configuration
+- `.env`
+- `a365.generated.config.json`
+
+If the CLI prints a consent URL, a Global Administrator must open it and approve the requested permissions.
+
+### Option 2.2: Verify registration
+
+Run:
+
+```powershell
+a365 query-entra blueprint-scopes --agent-name "external-it-helpdesk-agent"
+a365 query-entra instance-scopes --agent-name "external-it-helpdesk-agent"
+```
+
+Confirm that:
+
+- The blueprint exists
+- The agent identity exists
+- Required permissions are granted
+- `a365.generated.config.json` contains `agentBlueprintId`, `agenticAppId`, and `agentRegistrationId`
+
+### Option 2.3: Install Microsoft OpenTelemetry
+
+Run this from the **project root**, ideally inside your Python virtual environment:
+
+```powershell
+pip install microsoft-opentelemetry
+```
+
+This is the supported observability path. Do not use the deprecated Agent 365 Observability SDK for new integrations.
+
+### Option 2.4: Initialize Microsoft OpenTelemetry early in the app
+
+Add initialization code near the start of the application, before the agent handles requests.
+
+Conceptually:
+
+```python
+from microsoft.opentelemetry import use_microsoft_opentelemetry
+
+
+use_microsoft_opentelemetry(
+    enable_a365=True,
+    a365_token_resolver=token_resolver,
+    a365_use_s2s_endpoint=True,
+    a365_enable_observability_exporter=True,
+)
+```
+
+The `token_resolver` must return a valid Agent 365 observability token for the agent and tenant. For standard blueprint agents, Microsoft recommends the S2S route.
+
+### Option 2.5: Add Agent 365 baggage
+
+Agent 365 needs tenant and agent identity context on telemetry spans.
+
+Conceptually:
+
+```python
+from microsoft.opentelemetry.a365.core import BaggageBuilder
+
+
+with (
+    BaggageBuilder()
+    .tenant_id(tenant_id)
+    .agent_id(agent_id)
+    .build()
+):
+    # Create invoke_agent and tool spans here.
+    pass
+```
+
+Without baggage, spans may not correlate to the registered agent.
+
+### Option 2.6: Add an `invoke_agent` span
+
+Wrap the main agent run in a root `invoke_agent` span:
+
+```text
+ticket received
+  -> invoke_agent span starts
+  -> classify ticket
+  -> plan actions
+  -> call tools
+  -> produce response
+  -> invoke_agent span ends
+```
+
+This root span is important for Agent 365 product views.
+
+### Option 2.7: Add tool execution spans
+
+Wrap each tool call in a tool span:
+
+```text
+check_user_status
+check_service_health
+reset_mfa
+create_ticket_note
+```
+
+Each span should include:
+
+- Tool name
+- Safe arguments
+- Success or failure
+- Error details, if any
+- Response summary
+
+### Option 2.8: Add SDK tooling only if the agent needs Microsoft 365 tools
+
+If the agent needs governed Microsoft 365 tools, install the Agent 365 tooling packages:
+
+```powershell
+pip install microsoft-agents-a365-runtime
+pip install microsoft-agents-a365-tooling
+pip install microsoft-agents-a365-tooling-extensions-openai
+```
+
+Use these only when the agent needs governed Work IQ MCP access to Microsoft 365 workloads such as Mail, Calendar, Word, SharePoint, or Teams.
+
+If the agent only needs registration and observability, you do not need the tooling packages.
+
+### Option 2.9: Run and validate
+
+Run the local agent:
+
+```powershell
+$env:PYTHONPATH = ".\src"
+python -m it_agent --ticket .\examples\mfa-lockout.json
+```
+
+Then validate:
+
+```powershell
+a365 query-entra blueprint-scopes --agent-name "external-it-helpdesk-agent"
+a365 query-entra instance-scopes --agent-name "external-it-helpdesk-agent"
+```
+
+Check the Agent 365 admin surface:
+
+```text
+https://admin.cloud.microsoft/#/agents/all
+```
+
+Also confirm your tenant has the required licensing for telemetry visibility. Without the required Microsoft 365 E7 or Microsoft Agent 365 licensing, telemetry ingestion can succeed but product surfaces may remain empty.
+
+## Which option should you choose?
+
+Use **Option 1** if you want a guided lab experience and are comfortable using GitHub Copilot Skills.
+
+Use **Option 2** if you want to understand exactly what the SDK and OpenTelemetry integration does, or if your organization does not allow coding-assistant skill installation.
+
+The important point: **the SDK/OpenTelemetry path is the real integration. Copilot Skills only help automate that path.**
 
 ## Step 12: Deploy the agent
 
@@ -1145,15 +1345,16 @@ The shortest path for most third-party agents is:
 ```text
 1. Confirm the agent runs locally
 2. Install Agent 365 CLI
-3. Install Agent 365 Skills
-4. Run Agent 365 setup
-5. Register the agent
-6. Complete Global Admin consent
-7. Add Microsoft OpenTelemetry observability
-8. Add Work IQ tools or Purview DLP if needed
-9. Validate
-10. Deploy
-11. Operate in Agent 365
+3. Choose one onboarding path:
+   - Option 1: guided setup with Agent 365 Skills
+   - Option 2: manual SDK path
+4. Register the agent with Agent 365
+5. Complete Global Admin consent, if required
+6. Add Microsoft OpenTelemetry observability
+7. Add Work IQ tools or Purview DLP if needed
+8. Validate
+9. Deploy
+10. Operate in Agent 365
 ```
 
-The Agent 365 CLI gets the agent registered. Microsoft OpenTelemetry makes runtime activity visible. The Agent 365 SDK tooling and notification packages add deeper Microsoft 365 integration when the agent needs it.
+The Agent 365 CLI gets the agent registered. Microsoft OpenTelemetry makes runtime activity visible. The Agent 365 SDK tooling and notification packages add deeper Microsoft 365 integration when the agent needs it. GitHub Copilot Skills are optional; they help automate the setup, but they are not the integration itself.
