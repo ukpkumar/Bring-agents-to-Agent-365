@@ -18,6 +18,349 @@ Microsoft Agent 365 helps answer that question by bringing agents into a unified
 
 The example scenario is an external IT helpdesk triage agent. The agent classifies support tickets, checks mock IT systems, separates safe actions from approval-required actions, and can use OpenAI for conversation. The same pattern applies to agents built with OpenAI Agents SDK, LangChain, CrewAI, LlamaIndex, custom Python or Node.js runtimes, and other third-party frameworks.
 
+## Exercise overview
+
+This walkthrough has two parts:
+
+1. Build a simple local third-party agent.
+2. Register and instrument that agent with Microsoft Agent 365.
+
+The local agent is intentionally simple. It does not depend on Microsoft 365 data, real ticketing systems, or production identity. That makes it a safe starting point for learning the onboarding flow.
+
+The agent will:
+
+- Accept a helpdesk ticket as JSON
+- Classify the ticket
+- Assign severity and risk
+- Plan safe and approval-required actions
+- Run mock IT tools
+- Write local telemetry
+- Later connect to Agent 365 registration and observability
+
+## Part 1: Build a local third-party agent
+
+Start by creating a small Python project.
+
+```powershell
+mkdir external-it-agent
+cd external-it-agent
+mkdir src\it_agent
+mkdir examples
+mkdir tests
+```
+
+Create a basic project file:
+
+```powershell
+New-Item pyproject.toml
+```
+
+Add:
+
+```toml
+[project]
+name = "external-it-agent"
+version = "0.1.0"
+description = "External IT helpdesk agent sample for Agent 365 onboarding."
+requires-python = ">=3.10"
+dependencies = [
+  "openai>=1.0.0",
+]
+```
+
+### Define the ticket and result models
+
+Create:
+
+```text
+src\it_agent\models.py
+```
+
+The agent needs a ticket input, a classification result, planned actions, and tool results.
+
+```python
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any
+
+
+class TicketCategory(str, Enum):
+    IDENTITY = "identity"
+    NETWORK = "network"
+    DEVICE = "device"
+    EMAIL = "email"
+    SECURITY = "security"
+    ACCESS = "access"
+    UNKNOWN = "unknown"
+
+
+class Severity(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class ActionSafety(str, Enum):
+    SAFE = "safe"
+    APPROVAL_REQUIRED = "approval_required"
+
+
+@dataclass(frozen=True)
+class Ticket:
+    id: str
+    requester: str
+    requester_email: str
+    title: str
+    description: str
+    affected_service: str | None = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Ticket":
+        required = ["id", "requester", "requester_email", "title", "description"]
+        missing = [key for key in required if not data.get(key)]
+        if missing:
+            raise ValueError(f"Ticket is missing required fields: {', '.join(missing)}")
+        return cls(**{key: data.get(key) for key in cls.__dataclass_fields__})
+
+
+@dataclass(frozen=True)
+class Classification:
+    category: TicketCategory
+    severity: Severity
+    risk_score: int
+    rationale: str
+
+
+@dataclass(frozen=True)
+class PlannedAction:
+    name: str
+    safety: ActionSafety
+    reason: str
+    args: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ToolResult:
+    name: str
+    success: bool
+    message: str
+    data: dict[str, Any] = field(default_factory=dict)
+```
+
+### Add mock IT tools
+
+Create:
+
+```text
+src\it_agent\tools.py
+```
+
+Use mock tools so the exercise is safe to run locally.
+
+```python
+from .models import ToolResult
+
+
+MOCK_USERS = {
+    "alex@contoso.example": {
+        "account_enabled": True,
+        "mfa_registered": True,
+        "mfa_locked": True,
+        "device_compliant": True,
+    }
+}
+
+MOCK_SERVICES = {
+    "identity": {"status": "healthy"},
+    "vpn": {"status": "degraded", "incident": "VPN gateway packet loss."},
+    "email": {"status": "healthy"},
+}
+
+
+def check_user_status(email: str) -> ToolResult:
+    user = MOCK_USERS.get(email.lower())
+    if not user:
+        return ToolResult("check_user_status", False, f"No user found for {email}.")
+    return ToolResult("check_user_status", True, f"Found user state for {email}.", dict(user))
+
+
+def check_service_health(service: str) -> ToolResult:
+    state = MOCK_SERVICES.get(service.lower())
+    if not state:
+        return ToolResult("check_service_health", False, f"No service found for {service}.")
+    return ToolResult("check_service_health", True, f"{service} status is {state['status']}.", dict(state))
+
+
+def reset_mfa(email: str) -> ToolResult:
+    return ToolResult("reset_mfa", True, f"MFA reset queued for {email}.")
+
+
+def create_ticket_note(ticket_id: str, note: str) -> ToolResult:
+    return ToolResult("create_ticket_note", True, f"Added note to ticket {ticket_id}.", {"note": note})
+```
+
+### Add the agent logic
+
+Create:
+
+```text
+src\it_agent\agent.py
+```
+
+```python
+from .models import ActionSafety, Classification, PlannedAction, Severity, Ticket, TicketCategory
+from .tools import check_service_health, check_user_status, create_ticket_note, reset_mfa
+
+
+class ItHelpdeskAgent:
+    def handle_ticket(self, ticket: Ticket, approved: bool = False) -> dict:
+        classification = self._classify(ticket)
+        actions = self._plan(ticket, classification)
+        results = []
+
+        for action in actions:
+            if action.safety == ActionSafety.APPROVAL_REQUIRED and not approved:
+                results.append({
+                    "name": action.name,
+                    "success": False,
+                    "message": "Skipped because approval was not provided.",
+                    "approval_required": True,
+                })
+                continue
+
+            if action.name == "check_user_status":
+                results.append(check_user_status(action.args["email"]))
+            elif action.name == "check_service_health":
+                results.append(check_service_health(action.args["service"]))
+            elif action.name == "reset_mfa":
+                results.append(reset_mfa(action.args["email"]))
+            elif action.name == "create_ticket_note":
+                results.append(create_ticket_note(action.args["ticket_id"], action.args["note"]))
+
+        return {
+            "ticket_id": ticket.id,
+            "classification": classification,
+            "actions": actions,
+            "tool_results": results,
+        }
+
+    def _classify(self, ticket: Ticket) -> Classification:
+        text = f"{ticket.title} {ticket.description} {ticket.affected_service or ''}".lower()
+        if any(term in text for term in ["mfa", "authenticator", "login", "sign in", "password"]):
+            return Classification(TicketCategory.IDENTITY, Severity.MEDIUM, 55, "Identity or authentication issue.")
+        if any(term in text for term in ["vpn", "network", "latency"]):
+            return Classification(TicketCategory.NETWORK, Severity.MEDIUM, 45, "Network or VPN issue.")
+        if any(term in text for term in ["phish", "malware", "suspicious", "compromised"]):
+            return Classification(TicketCategory.SECURITY, Severity.HIGH, 85, "Potential security issue.")
+        return Classification(TicketCategory.UNKNOWN, Severity.LOW, 20, "No strong category signal found.")
+
+    def _plan(self, ticket: Ticket, classification: Classification) -> list[PlannedAction]:
+        note = PlannedAction(
+            "create_ticket_note",
+            ActionSafety.SAFE,
+            "Document triage result.",
+            {"ticket_id": ticket.id, "note": f"Classified as {classification.category.value}."},
+        )
+
+        if classification.category == TicketCategory.IDENTITY:
+            return [
+                PlannedAction("check_user_status", ActionSafety.SAFE, "Verify user state.", {"email": ticket.requester_email}),
+                PlannedAction("check_service_health", ActionSafety.SAFE, "Check identity service.", {"service": "identity"}),
+                PlannedAction("reset_mfa", ActionSafety.APPROVAL_REQUIRED, "MFA reset changes authentication state.", {"email": ticket.requester_email}),
+                note,
+            ]
+
+        if classification.category == TicketCategory.NETWORK:
+            return [
+                PlannedAction("check_service_health", ActionSafety.SAFE, "Check VPN service.", {"service": "vpn"}),
+                note,
+            ]
+
+        return [note]
+```
+
+### Add a command-line entry point
+
+Create:
+
+```text
+src\it_agent\__main__.py
+```
+
+```python
+import argparse
+import json
+from dataclasses import asdict
+from pathlib import Path
+
+from .agent import ItHelpdeskAgent
+from .models import Ticket
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--ticket", required=True)
+parser.add_argument("--approve", action="store_true")
+args = parser.parse_args()
+
+ticket = Ticket.from_dict(json.loads(Path(args.ticket).read_text()))
+result = ItHelpdeskAgent().handle_ticket(ticket, approved=args.approve)
+print(json.dumps(asdict(result) if hasattr(result, "__dataclass_fields__") else result, indent=2, default=str))
+```
+
+Also create:
+
+```text
+src\it_agent\__init__.py
+```
+
+```python
+from .agent import ItHelpdeskAgent
+```
+
+### Add a sample ticket
+
+Create:
+
+```text
+examples\mfa-lockout.json
+```
+
+```json
+{
+  "id": "INC-1042",
+  "requester": "Alex Kim",
+  "requester_email": "alex@contoso.example",
+  "title": "Cannot sign in after MFA prompt",
+  "description": "I changed phones and Authenticator no longer works.",
+  "affected_service": "identity"
+}
+```
+
+### Run the local agent
+
+```powershell
+$env:PYTHONPATH = ".\src"
+python -m it_agent --ticket .\examples\mfa-lockout.json
+```
+
+Expected behavior:
+
+- The ticket is classified as an identity issue.
+- Safe checks run.
+- MFA reset is skipped because approval was not provided.
+
+Now test with approval:
+
+```powershell
+python -m it_agent --ticket .\examples\mfa-lockout.json --approve
+```
+
+Expected behavior:
+
+- The simulated MFA reset runs.
+
+At this point, you have a working local third-party agent. The next part is bringing it into Agent 365.
+
 ## What Agent 365 does and does not do
 
 Before starting, it is important to clarify the role of Agent 365.
@@ -417,4 +760,3 @@ The shortest path for most third-party agents is:
 ```
 
 The Agent 365 CLI gets the agent registered. Microsoft OpenTelemetry makes runtime activity visible. The Agent 365 SDK tooling and notification packages add deeper Microsoft 365 integration when the agent needs it.
-
