@@ -1,5 +1,5 @@
 ---
-title: "Bringing a Third-Party Agent to Microsoft Agent 365: A Step-by-Step Guide"
+title: "Lab Guide: Bringing a Third-Party Agent to Microsoft Agent 365"
 description: "A practical walkthrough for registering, instrumenting, and validating a custom or third-party agent with Microsoft Agent 365."
 date: 2026-10-13
 tags:
@@ -10,7 +10,7 @@ tags:
   - Governance
 ---
 
-# Bringing a Third-Party Agent to Microsoft Agent 365: A Step-by-Step Guide
+# Lab Guide: Bringing a Third-Party Agent to Microsoft Agent 365
 
 AI agents are moving quickly from experiments to business-critical systems. That creates a new operational question for IT and security teams: how do we discover, govern, observe, and secure agents that were not originally built on Microsoft platforms?
 
