@@ -1,0 +1,9 @@
+.env
+*.pyc
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+logs/
+a365.generated.config.json
+
