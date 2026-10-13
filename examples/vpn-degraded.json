@@ -1,0 +1,9 @@
+{
+  "id": "INC-1043",
+  "requester": "Sam Patel",
+  "requester_email": "sam@contoso.example",
+  "title": "VPN is very slow",
+  "description": "VPN latency is high from Dubai and internal apps keep timing out.",
+  "affected_service": "vpn"
+}
+

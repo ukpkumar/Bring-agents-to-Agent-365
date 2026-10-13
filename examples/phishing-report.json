@@ -1,0 +1,9 @@
+{
+  "id": "SEC-2041",
+  "requester": "Alex Kim",
+  "requester_email": "alex@contoso.example",
+  "title": "Suspicious phishing email",
+  "description": "I received a suspicious email asking me to open an invoice link and sign in again.",
+  "affected_service": "email"
+}
+

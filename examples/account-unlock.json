@@ -1,0 +1,9 @@
+{
+  "id": "INC-1046",
+  "requester": "Alex Kim",
+  "requester_email": "alex@contoso.example",
+  "title": "Account locked after password attempts",
+  "description": "I entered my password incorrectly several times and now I cannot sign in to my account.",
+  "affected_service": "identity"
+}
+

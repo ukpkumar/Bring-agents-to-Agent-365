@@ -1,0 +1,9 @@
+{
+  "id": "INC-1044",
+  "requester": "Sam Patel",
+  "requester_email": "sam@contoso.example",
+  "title": "Laptop marked non-compliant",
+  "description": "My laptop is blocked from company resources because Intune says the device is not compliant.",
+  "affected_service": "device"
+}
+

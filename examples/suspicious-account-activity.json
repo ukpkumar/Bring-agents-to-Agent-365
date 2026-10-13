@@ -1,0 +1,9 @@
+{
+  "id": "SEC-2042",
+  "requester": "Lee Wong",
+  "requester_email": "lee@contoso.example",
+  "title": "Possible compromised account",
+  "description": "A user reported suspicious sign-in notifications from a country they have not visited.",
+  "affected_service": "identity"
+}
+

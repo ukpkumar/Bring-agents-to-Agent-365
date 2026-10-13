@@ -1,0 +1,9 @@
+{
+  "id": "INC-1042",
+  "requester": "Alex Kim",
+  "requester_email": "alex@contoso.example",
+  "title": "Cannot sign in after MFA prompt",
+  "description": "I am locked out after changing phones. Authenticator keeps failing and I need access for a finance close task.",
+  "affected_service": "identity"
+}
+

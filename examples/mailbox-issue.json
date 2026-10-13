@@ -1,0 +1,9 @@
+{
+  "id": "INC-1045",
+  "requester": "Maya Chen",
+  "requester_email": "maya@contoso.example",
+  "title": "Outlook mailbox search is not working",
+  "description": "Email search in Outlook does not return recent messages, but sending and receiving email works.",
+  "affected_service": "email"
+}
+

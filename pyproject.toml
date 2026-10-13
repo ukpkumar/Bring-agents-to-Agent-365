@@ -1,0 +1,8 @@
+[project]
+name = "external-it-agent"
+version = "0.1.0"
+description = "Framework-neutral external IT helpdesk agent sample with Agent 365 integration seams."
+requires-python = ">=3.10"
+dependencies = [
+  "openai>=1.0.0",
+]

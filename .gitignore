@@ -1,4 +1,6 @@
 .env
+a365.config.json
+.agents/
 *.pyc
 __pycache__/
 .pytest_cache/
@@ -6,4 +8,3 @@ __pycache__/
 venv/
 logs/
 a365.generated.config.json
-

@@ -139,6 +139,32 @@ If you use a different folder, replace that path in the commands.
 
 ## Part 1: Build a local third-party agent
 
+You have two choices for this part:
+
+| Choice | Use when |
+|---|---|
+| Build it manually | You want to learn how the local agent is constructed file by file |
+| Use the prebuilt sample | You want to skip the build steps and go directly to running or onboarding the agent |
+
+### Option A: Use the prebuilt sample agent
+
+The completed local agent is included in this repository. If you do not want to create each file manually, clone the repo and run the sample directly.
+
+Run this in **PowerShell**:
+
+```powershell
+cd C:\Agent365Labs
+git clone https://github.com/ukpkumar/Bring-agents-to-Agent-365.git external-it-agent
+cd external-it-agent
+$env:PYTHONPATH = ".\src"
+python -m unittest discover -s tests
+python -m it_agent --ticket .\examples\mfa-lockout.json
+```
+
+If the test command returns `OK` and the ticket command prints a JSON result, the local agent is ready. You can skip the manual file creation steps and continue to the Agent 365 onboarding sections.
+
+### Option B: Build the sample manually
+
 Start by creating a small Python project. Run these commands in **Windows PowerShell**. This creates a local project only; it is not connected to Agent 365 yet.
 
 ```powershell

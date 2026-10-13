@@ -1,0 +1,9 @@
+{
+  "id": "REQ-3051",
+  "requester": "Nora Ali",
+  "requester_email": "nora@contoso.example",
+  "title": "Need access to finance application",
+  "description": "I joined the finance operations team and need permission to access the monthly close application.",
+  "affected_service": "finance-app"
+}
+

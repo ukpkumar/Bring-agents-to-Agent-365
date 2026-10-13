@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "0.1",
+  "agent": {
+    "name": "external-it-helpdesk-agent",
+    "displayName": "External IT Helpdesk Agent",
+    "description": "Non-Microsoft IT helpdesk triage agent for identity, VPN, device, email, access, and security tickets.",
+    "owner": {
+      "business": "IT Operations",
+      "technical": "IT Automation Team"
+    },
+    "runtime": {
+      "language": "python",
+      "hosting": "external",
+      "entryPoints": [
+        "python -m it_agent",
+        "python -m it_agent.web",
+        "python -m it_agent.openai_chat"
+      ]
+    },
+    "dataAccess": [
+      "helpdesk tickets",
+      "mock identity state",
+      "mock service health"
+    ]
+  },
+  "tools": [
+    {
+      "name": "check_user_status",
+      "description": "Read user identity, MFA, and device posture.",
+      "safety": "safe"
+    },
+    {
+      "name": "check_service_health",
+      "description": "Read service health for identity, VPN, or email.",
+      "safety": "safe"
+    },
+    {
+      "name": "create_ticket_note",
+      "description": "Write a service desk ticket note.",
+      "safety": "safe"
+    },
+    {
+      "name": "reset_mfa",
+      "description": "Reset a user's MFA registration.",
+      "safety": "approval_required"
+    },
+    {
+      "name": "unlock_account",
+      "description": "Unlock a user account.",
+      "safety": "approval_required"
+    },
+    {
+      "name": "quarantine_message",
+      "description": "Quarantine a suspected phishing message.",
+      "safety": "approval_required"
+    }
+  ],
+  "governance": {
+    "requiresOwner": true,
+    "requiresApprovalForRiskyTools": true,
+    "defaultAudience": "IT helpdesk analysts",
+    "recommendedPolicies": [
+      "Require named owner before deployment",
+      "Block approval-required tools unless analyst approval is present",
+      "Expire inactive pilot agents after 90 days",
+      "Route high-risk security events to SOC review"
+    ]
+  },
+  "telemetry": {
+    "events": [
+      "ticket.received",
+      "ticket.classified",
+      "tool.invocation.started",
+      "tool.invocation.completed",
+      "tool.skipped",
+      "ticket.completed"
+    ]
+  }
+}
+
