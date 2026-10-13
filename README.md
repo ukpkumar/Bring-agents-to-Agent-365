@@ -58,11 +58,35 @@ The agent will:
 - Write local telemetry
 - Later connect to Agent 365 registration and observability
 
+## How to follow this lab
+
+The lab uses several tools, and each command must be run in the right place. Unless a step says otherwise, use **Windows PowerShell**.
+
+| Command type | Where to run it | What it affects |
+|---|---|---|
+| `mkdir`, `New-Item`, `python` | Inside the local agent project folder | The sample agent code on your machine |
+| `pip install ...` | Inside the local agent project folder, ideally in a virtual environment | Python packages for this agent |
+| `dotnet tool install --global ...` | Anywhere in PowerShell | Installs a user-level CLI tool |
+| `winget install ...` | Anywhere in PowerShell | Installs a Windows application |
+| `az login`, `az account show` | Anywhere in PowerShell | Signs you in to Azure and selects the subscription/tenant |
+| `a365 ...` | Inside the local agent project folder | Registers/configures this specific agent project |
+| `gh skill add ...` | Anywhere in PowerShell | Installs coding-assistant skills for your user profile |
+
+Recommended local folder for this lab:
+
+```text
+C:\Agent365Labs\external-it-agent
+```
+
+If you use a different folder, replace that path in the commands.
+
 ## Part 1: Build a local third-party agent
 
-Start by creating a small Python project.
+Start by creating a small Python project. Run these commands in **Windows PowerShell**. This creates a local project only; it is not connected to Agent 365 yet.
 
 ```powershell
+mkdir C:\Agent365Labs
+cd C:\Agent365Labs
 mkdir external-it-agent
 cd external-it-agent
 mkdir src\it_agent
@@ -359,6 +383,12 @@ examples\mfa-lockout.json
 
 ### Run the local agent
 
+Run these commands from the **project root**:
+
+```text
+C:\Agent365Labs\external-it-agent
+```
+
 ```powershell
 $env:PYTHONPATH = ".\src"
 python -m it_agent --ticket .\examples\mfa-lockout.json
@@ -573,6 +603,8 @@ if __name__ == "__main__":
 
 Start the browser UI:
 
+Run this from the **project root** in PowerShell:
+
 ```powershell
 $env:PYTHONPATH = ".\src"
 python -m it_agent.web
@@ -653,38 +685,136 @@ You need:
 - Global Administrator available for tenant-wide consent
 - Azure Contributor access if the setup creates Azure resources
 
-Install the Agent 365 CLI:
+### 2.1 Open PowerShell
+
+Open **Windows PowerShell** as your normal user. You do not usually need Administrator mode for this lab, but your Microsoft tenant and Azure account must have the required permissions.
+
+### 2.2 Confirm Python is available
+
+Run this anywhere in PowerShell:
+
+```powershell
+python --version
+```
+
+Expected result: Python 3.10 or later.
+
+If Python is missing, install it from:
+
+```text
+https://www.python.org/downloads/
+```
+
+or use your organization's approved Python distribution.
+
+### 2.3 Install .NET 8 or later
+
+The Agent 365 CLI is installed as a .NET global tool, so .NET must be available first.
+
+Run this anywhere in PowerShell:
+
+```powershell
+dotnet --version
+```
+
+Expected result: version 8.0 or later.
+
+If `dotnet` is missing, install .NET from:
+
+```text
+https://dotnet.microsoft.com/download
+```
+
+### 2.4 Install the Agent 365 CLI
+
+Run this anywhere in PowerShell. This installs the CLI for your Windows user profile, not inside the Python project:
 
 ```powershell
 dotnet tool install --global Microsoft.Agents.A365.DevTools.Cli
+```
+
+Verify:
+
+```powershell
 a365 -h
 ```
 
-Install GitHub CLI if you plan to use Agent 365 Skills:
+Expected result: help text for the `a365` command.
+
+If PowerShell says `a365` is not recognized, close and reopen PowerShell. The .NET global tools folder might not be loaded into the current PATH yet.
+
+### 2.5 Install Azure CLI
+
+The Agent 365 setup uses Azure context for tenant/subscription detection and resource setup.
+
+Run this anywhere in PowerShell:
 
 ```powershell
-winget install --id GitHub.cli --exact --source winget
-gh --version
+az --version
 ```
 
-Sign in to Azure:
+If `az` is missing, install Azure CLI from:
+
+```text
+https://learn.microsoft.com/cli/azure/install-azure-cli-windows
+```
+
+Then sign in:
 
 ```powershell
 az login
 az account show
 ```
 
+Confirm the displayed tenant and subscription are the ones you want to use for the lab.
+
+### 2.6 Install GitHub CLI if using Agent 365 Skills
+
+GitHub CLI is needed only for installing Agent 365 Skills into your coding assistant environment.
+
+Run this anywhere in PowerShell:
+
+```powershell
+winget install --id GitHub.cli --exact --source winget
+```
+
+Close and reopen PowerShell, then verify:
+
+```powershell
+gh --version
+```
+
+If `gh` is still not recognized, run it by full path:
+
+```powershell
+& "C:\Program Files\GitHub CLI\gh.exe" --version
+```
+
+### 2.7 Move into the agent project folder
+
+For all `a365` commands, go to the agent project root first:
+
+```powershell
+cd C:\Agent365Labs\external-it-agent
+```
+
 ## Step 3: Install Agent 365 Skills
 
 Microsoft recommends using Agent 365 Skills from a supported coding assistant because they guide the setup, make code changes, and validate the result.
 
-Install the skills:
+Run this from PowerShell. It can be run from any folder:
 
 ```powershell
 gh skill add microsoft/agent365-skills
 ```
 
-When prompted, select the Agent 365 skills you need. For a full onboarding flow, select all.
+If `gh` is not on PATH, use:
+
+```powershell
+& "C:\Program Files\GitHub CLI\gh.exe" skill add microsoft/agent365-skills
+```
+
+When prompted, select the Agent 365 skills you need. For a full onboarding flow, select all. In the interactive picker, the right arrow typically selects all skills, then Enter confirms.
 
 Common skills include:
 
@@ -697,7 +827,13 @@ Common skills include:
 | `purview-dlp-integration` | Adds Purview DLP checks |
 | `a365-code-validator` | Validates an Agent 365 integration |
 
-Restart the coding assistant after installing the skills.
+Verify the skills are installed:
+
+```powershell
+gh skill list
+```
+
+Restart the coding assistant after installing the skills. This is important; the assistant may not detect newly installed skills until it restarts.
 
 ## Step 4: Confirm the agent runs before onboarding
 
@@ -715,6 +851,12 @@ python -m it_agent --ticket .\examples\mfa-lockout.json
 The purpose is to establish a baseline. Agent 365 integration should be additive; it should not change core agent behavior.
 
 ## Step 5: Run Agent 365 setup
+
+Open the project folder in your coding assistant. The current working directory should be the agent root:
+
+```text
+C:\Agent365Labs\external-it-agent
+```
 
 In the coding assistant, ask:
 
@@ -734,7 +876,7 @@ Use the AI teammate path only when the agent needs its own Microsoft 365 user ac
 
 ## Step 6: Register the agent
 
-Ask:
+Stay in the same project folder. Ask the coding assistant:
 
 ```text
 register this agent with Agent 365
@@ -743,6 +885,8 @@ register this agent with Agent 365
 This invokes `make-a365-agent`.
 
 Manual CLI equivalent:
+
+Run this from the **project root**:
 
 ```powershell
 a365 setup requirements
@@ -776,7 +920,7 @@ If the developer is not a Global Administrator, the CLI may print a consent URL.
 
 ## Step 7: Verify registration
 
-Use the CLI to verify permissions:
+Use the CLI to verify permissions. Run these commands from the **project root**:
 
 ```powershell
 a365 query-entra blueprint-scopes --agent-name "external-it-helpdesk-agent"
@@ -810,7 +954,7 @@ At this stage, the agent is registered. That means Agent 365 knows about it. Run
 
 Registration gives identity and governance metadata. Observability makes the agent operationally visible.
 
-Ask the coding assistant:
+Use the coding assistant from the **project root** and ask:
 
 ```text
 add observability to this agent
@@ -827,6 +971,8 @@ S2S
 The integration should use the Microsoft OpenTelemetry Distro, not the deprecated Agent 365 Observability SDK.
 
 For Python, the package is:
+
+Run package installs from the **project root**, ideally after activating your Python virtual environment if you use one:
 
 ```powershell
 pip install microsoft-opentelemetry
@@ -846,7 +992,7 @@ The root `invoke_agent` span is important. Without it, spans might be queryable 
 
 If the agent needs to read or act on Microsoft 365 data, add Work IQ tools.
 
-Ask:
+Use the coding assistant from the **project root** and ask:
 
 ```text
 add Work IQ tools to this agent
@@ -875,7 +1021,7 @@ This step requires the right Microsoft 365 licensing and admin consent. It is sk
 
 If the agent processes sensitive data, add Microsoft Purview checks.
 
-Ask:
+Use the coding assistant from the **project root** and ask:
 
 ```text
 add Purview DLP to this agent
@@ -892,7 +1038,7 @@ Use this for:
 
 ## Step 11: Validate the integration
 
-Ask:
+Use the coding assistant from the **project root** and ask:
 
 ```text
 validate this Agent 365 integration
@@ -901,6 +1047,8 @@ validate this Agent 365 integration
 This invokes `a365-code-validator`, where available.
 
 Also run your original test suite:
+
+Run this from the **project root**:
 
 ```powershell
 python -m unittest discover -s tests
