@@ -361,6 +361,218 @@ Expected behavior:
 
 At this point, you have a working local third-party agent. The next part is bringing it into Agent 365.
 
+### Add a local browser interface
+
+A command-line agent is useful for testing, but a browser interface makes the scenario easier to demo. You can add a lightweight local web server using only Python's standard library.
+
+Create:
+
+```text
+src\it_agent\web.py
+```
+
+Add:
+
+```python
+import json
+from dataclasses import asdict
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+
+from .agent import ItHelpdeskAgent
+from .models import Ticket
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+EXAMPLES_DIR = PROJECT_ROOT / "examples"
+
+
+class AgentWebHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        parsed = urlparse(self.path)
+
+        if parsed.path == "/":
+            self._send_html(INDEX_HTML)
+            return
+
+        if parsed.path == "/api/tickets":
+            tickets = sorted(path.name for path in EXAMPLES_DIR.glob("*.json"))
+            self._send_json({"tickets": tickets})
+            return
+
+        if parsed.path == "/api/ticket":
+            name = parse_qs(parsed.query).get("name", [""])[0]
+            ticket_path = _safe_ticket_path(name)
+            if ticket_path is None:
+                self._send_json({"error": "Ticket not found."}, HTTPStatus.NOT_FOUND)
+                return
+            self._send_json(json.loads(ticket_path.read_text(encoding="utf-8")))
+            return
+
+        self._send_json({"error": "Not found."}, HTTPStatus.NOT_FOUND)
+
+    def do_POST(self):
+        if urlparse(self.path).path != "/api/run":
+            self._send_json({"error": "Not found."}, HTTPStatus.NOT_FOUND)
+            return
+
+        length = int(self.headers.get("Content-Length", "0"))
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            ticket = Ticket.from_dict(payload["ticket"])
+            approved = bool(payload.get("approved", False))
+            result = ItHelpdeskAgent().handle_ticket(ticket, approved=approved)
+            self._send_json(result)
+        except (KeyError, ValueError, json.JSONDecodeError) as error:
+            self._send_json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+
+    def log_message(self, format, *args):
+        return
+
+    def _send_html(self, html):
+        body = html.encode("utf-8")
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_json(self, payload, status=HTTPStatus.OK):
+        body = json.dumps(payload, indent=2, default=str).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def _safe_ticket_path(name):
+    if not name or Path(name).name != name:
+        return None
+    path = EXAMPLES_DIR / name
+    if path.suffix != ".json" or not path.exists():
+        return None
+    return path
+
+
+def main():
+    server = ThreadingHTTPServer(("127.0.0.1", 8765), AgentWebHandler)
+    print("External IT agent web UI running at http://127.0.0.1:8765")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+
+
+INDEX_HTML = """
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>External IT Helpdesk Agent</title>
+  <style>
+    body { font-family: Segoe UI, Arial, sans-serif; margin: 32px; max-width: 1100px; }
+    textarea, select { width: 100%; margin: 8px 0 16px; }
+    textarea { height: 260px; font-family: Consolas, monospace; }
+    button { padding: 10px 14px; margin-right: 8px; }
+    pre { background: #f5f5f5; padding: 16px; overflow: auto; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  </style>
+</head>
+<body>
+  <h1>External IT Helpdesk Agent</h1>
+  <p>Select a sample ticket, edit the JSON if needed, and run the local agent.</p>
+
+  <div class="grid">
+    <section>
+      <label>Sample ticket</label>
+      <select id="ticketList"></select>
+      <button id="loadTicket">Load ticket</button>
+      <label>
+        <input type="checkbox" id="approved">
+        Approve risky actions
+      </label>
+      <textarea id="ticketJson"></textarea>
+      <button id="runAgent">Run agent</button>
+    </section>
+    <section>
+      <h2>Agent result</h2>
+      <pre id="result">Run a ticket to see the result.</pre>
+    </section>
+  </div>
+
+  <script>
+    const ticketList = document.getElementById("ticketList");
+    const ticketJson = document.getElementById("ticketJson");
+    const result = document.getElementById("result");
+    const approved = document.getElementById("approved");
+
+    async function loadTickets() {
+      const response = await fetch("/api/tickets");
+      const data = await response.json();
+      ticketList.innerHTML = data.tickets.map((name) => `<option value="${name}">${name}</option>`).join("");
+      await loadTicket();
+    }
+
+    async function loadTicket() {
+      const response = await fetch(`/api/ticket?name=${encodeURIComponent(ticketList.value)}`);
+      const data = await response.json();
+      ticketJson.value = JSON.stringify(data, null, 2);
+    }
+
+    async function runAgent() {
+      const ticket = JSON.parse(ticketJson.value);
+      const response = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticket, approved: approved.checked })
+      });
+      const data = await response.json();
+      result.textContent = JSON.stringify(data, null, 2);
+    }
+
+    document.getElementById("loadTicket").addEventListener("click", loadTicket);
+    document.getElementById("runAgent").addEventListener("click", runAgent);
+    ticketList.addEventListener("change", loadTicket);
+    loadTickets();
+  </script>
+</body>
+</html>
+"""
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Start the browser UI:
+
+```powershell
+$env:PYTHONPATH = ".\src"
+python -m it_agent.web
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8765
+```
+
+From the browser, you can:
+
+- Select a sample ticket
+- Edit the JSON payload
+- Choose whether to approve risky actions
+- Run the agent
+- View the structured result
+
+This is still a local demo. OpenAI, Agent 365, and Microsoft 365 services are not required for this browser UI to work.
+
 ## What Agent 365 does and does not do
 
 Before starting, it is important to clarify the role of Agent 365.
