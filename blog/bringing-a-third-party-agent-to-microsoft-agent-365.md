@@ -792,10 +792,11 @@ Close and reopen PowerShell, then verify:
 gh --version
 ```
 
-If `gh` is still not recognized, run it by full path:
+If `gh` is still not recognized, add GitHub CLI to the current PowerShell session's PATH:
 
 ```powershell
-& "C:\Program Files\GitHub CLI\gh.exe" --version
+$env:PATH = "C:\Program Files\GitHub CLI;" + $env:PATH
+gh --version
 ```
 
 ### 2.7 Move into the agent project folder
@@ -816,7 +817,14 @@ Run this from PowerShell. It can be run from any folder:
 gh skill add microsoft/agent365-skills
 ```
 
-If `gh` is not on PATH, use:
+If `gh` is not on PATH, add GitHub CLI to the current PowerShell session first:
+
+```powershell
+$env:PATH = "C:\Program Files\GitHub CLI;" + $env:PATH
+gh skill add microsoft/agent365-skills
+```
+
+Alternative: you can also run GitHub CLI by full path:
 
 ```powershell
 & "C:\Program Files\GitHub CLI\gh.exe" skill add microsoft/agent365-skills
