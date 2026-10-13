@@ -56,6 +56,55 @@ This walkthrough has two parts:
 
 The local agent is intentionally simple. It does not depend on Microsoft 365 data, real ticketing systems, or production identity. That makes it a safe starting point for learning the onboarding flow.
 
+For this lab, the local agent is named:
+
+```text
+External IT Helpdesk Agent
+```
+
+Its project/package name is:
+
+```text
+external-it-agent
+```
+
+The agent simulates a common IT operations scenario: a helpdesk analyst receives a support ticket, and the agent triages it before a human takes action.
+
+The agent does five things:
+
+1. Reads a helpdesk ticket from JSON.
+2. Classifies the issue, such as identity, VPN, device, email, access, or security.
+3. Assigns severity and a basic risk score.
+4. Plans actions using mock IT tools.
+5. Blocks risky actions unless approval is explicitly provided.
+
+Example use cases:
+
+| Ticket type | What the agent does |
+|---|---|
+| MFA lockout | Checks user status and identity service health; recommends MFA reset only with approval |
+| VPN issue | Checks mock VPN service health |
+| Phishing report | Classifies as security and requires approval before quarantine-style actions |
+| Device compliance issue | Checks mock user/device posture |
+| Application access request | Classifies as access and records a triage note |
+
+The agent has two types of actions:
+
+| Action type | Meaning | Example |
+|---|---|---|
+| Safe action | Read-only or low-risk action the agent can run automatically | Check user status, check service health |
+| Approval-required action | Action that changes user state, mailbox state, or security posture | Reset MFA, unlock account, quarantine message |
+
+This behavior is important for Agent 365 because it demonstrates enterprise-friendly agent design:
+
+- The agent has a clear owner and purpose.
+- The agent has predictable tools.
+- Risky actions are gated.
+- Activity can be observed.
+- The same design can later be governed through Agent 365.
+
+In this lab, the mock tools do not touch real systems. They are intentionally local and safe.
+
 The agent will:
 
 - Accept a helpdesk ticket as JSON
