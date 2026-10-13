@@ -2,6 +2,10 @@
 
 > This README is the repository landing-page version of the full lab guide in `blog\bringing-a-third-party-agent-to-microsoft-agent-365.md`.
 
+## Additional lab guides
+
+- [Lab Guide: Bringing Microsoft Foundry Agents to Microsoft Agent 365](blog/bringing-foundry-agents-to-microsoft-agent-365.md)
+
 # Lab Guide: Bringing a Third-Party Agent to Microsoft Agent 365
 
 AI agents are moving quickly from experiments to business-critical systems. That creates a new operational question for IT and security teams: how do we discover, govern, observe, and secure agents that were not originally built on Microsoft platforms?
