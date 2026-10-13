@@ -543,9 +543,13 @@ Expected behavior:
 
 At this point, you have a working local third-party agent. The next part is bringing it into Agent 365.
 
-### Add a local browser interface
+### Optional: Add a local browser interface
 
-A command-line agent is useful for testing, but a browser interface makes the scenario easier to demo. You can add a lightweight local web server using only Python's standard library.
+This step is optional. The command-line agent is enough to complete the Agent 365 onboarding lab.
+
+Add the browser interface only if you want a more visual local demo where users can select a ticket, edit JSON, toggle approval, and view the structured result.
+
+The browser interface uses a lightweight local web server based on Python's standard library. It does not require OpenAI, Agent 365, or Microsoft 365 services.
 
 Create the file. Run this in **PowerShell** from the project root:
 
