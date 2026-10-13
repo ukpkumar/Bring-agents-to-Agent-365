@@ -1343,7 +1343,48 @@ configure_observability()
 
 If you use the optional browser UI, also call it from `src\it_agent\web.py` before the web server starts.
 
-Important: the `token_resolver` above is only the resolver hook. For real Agent 365 export, it must return a valid Agent 365 observability token for the agent and tenant. For standard blueprint agents, Microsoft recommends the S2S route. That means you also need token acquisition/caching logic before production telemetry can flow.
+Important: the `token_resolver` above is only the resolver hook. It does not create a token by itself.
+
+When Microsoft OpenTelemetry exports telemetry to Agent 365, it asks the resolver:
+
+```text
+For this agent_id and tenant_id, give me an access token I can use to send telemetry.
+```
+
+The sample function checks `_token_cache`:
+
+```python
+def token_resolver(agent_id: str, tenant_id: str) -> str | None:
+    return _token_cache.get(f"{agent_id}:{tenant_id}")
+```
+
+That means another part of the application must first acquire a valid Agent 365 observability token and store it in `_token_cache`.
+
+For this lab agent, Microsoft recommends the **S2S** route.
+
+S2S means **service-to-service**:
+
+```text
+The agent authenticates as itself using its registered Agent 365 / Entra identity.
+```
+
+It is different from OBO:
+
+```text
+OBO = on-behalf-of a signed-in human user
+```
+
+For this lab, S2S is the right mental model because the External IT Helpdesk Agent is a backend-style service. It processes tickets and sends telemetry as the registered agent, not as a human user.
+
+| Term | Meaning in this lab |
+|---|---|
+| `token_resolver` | Function OpenTelemetry calls when it needs an export token |
+| `_token_cache` | Local in-memory place where the app stores tokens after acquiring them |
+| Token acquisition | The missing production step that gets a real Agent 365 observability token |
+| S2S | Agent authenticates as itself, not as a user |
+| OBO | Agent acts on behalf of a signed-in user |
+
+For a production implementation, add S2S token acquisition and caching before telemetry export. If you use the guided Agent 365 Skills path, the observability skill can help wire this correctly for the detected agent stack.
 
 ### Option 2.5: Add Agent 365 baggage
 
