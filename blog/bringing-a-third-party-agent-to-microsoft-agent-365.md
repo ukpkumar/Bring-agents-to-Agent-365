@@ -1630,9 +1630,14 @@ Choose **Method 2** in all other cases.
 
 Both methods use the same core integration components: Agent 365 CLI for registration and Microsoft OpenTelemetry for observability.
 
-## Step 12: Deploy the agent
+## Step 12 (Optional for production): Deploy the agent
 
-Agent 365 does not host the agent. Deploy it to your preferred runtime:
+This step is optional for this lab.
+
+- If you are running locally for learning/testing, you can skip deployment.
+- If you need always-on or shared access, deploy to a managed runtime.
+
+Agent 365 does not host the agent. For production hosting, deploy it to your preferred runtime:
 
 - Azure App Service
 - Azure Container Apps
@@ -1703,7 +1708,7 @@ The shortest path for most third-party agents is:
 6. Add Microsoft OpenTelemetry observability
 7. Add Work IQ tools or Purview DLP if needed
 8. Validate
-9. Deploy
+9. Deploy (optional for local lab; required for production/shared runtime)
 10. Operate in Agent 365
 ```
 
