@@ -1622,14 +1622,6 @@ https://admin.cloud.microsoft/#/agents/all
 
 Also confirm your tenant has the required licensing for telemetry visibility. Without the required Microsoft 365 E7 or Microsoft Agent 365 licensing, telemetry ingestion can succeed but product surfaces may remain empty.
 
-## Method selection rule
-
-Choose **Method 1** only when Agent 365 Skills are available and approved in your environment.
-
-Choose **Method 2** in all other cases.
-
-Both methods use the same core integration components: Agent 365 CLI for registration and Microsoft OpenTelemetry for observability.
-
 ## Step 12: Operate in Agent 365
 
 Once registered and instrumented, admins can use Agent 365 and Microsoft 365 admin surfaces to:
