@@ -1630,7 +1630,22 @@ Choose **Method 2** in all other cases.
 
 Both methods use the same core integration components: Agent 365 CLI for registration and Microsoft OpenTelemetry for observability.
 
-## Step 12 (Optional for production): Deploy the agent
+## Step 12: Operate in Agent 365
+
+Once registered and instrumented, admins can use Agent 365 and Microsoft 365 admin surfaces to:
+
+- Discover the agent
+- Review ownership
+- Audit activity
+- Govern permissions
+- Review tools
+- Monitor sessions
+- Investigate risk
+- Apply lifecycle policy
+
+Security teams can also use Microsoft Defender and Microsoft Purview integrations, depending on the telemetry and compliance capabilities enabled.
+
+## Step 13 (Optional for production): Deploy the agent
 
 This step is optional for this lab.
 
@@ -1649,21 +1664,6 @@ Agent 365 does not host the agent. For production hosting, deploy it to your pre
 - Existing third-party platform
 
 After deployment, make sure the same Agent 365 environment variables and identity configuration are present in the deployed runtime.
-
-## Step 13: Operate in Agent 365
-
-Once registered and instrumented, admins can use Agent 365 and Microsoft 365 admin surfaces to:
-
-- Discover the agent
-- Review ownership
-- Audit activity
-- Govern permissions
-- Review tools
-- Monitor sessions
-- Investigate risk
-- Apply lifecycle policy
-
-Security teams can also use Microsoft Defender and Microsoft Purview integrations, depending on the telemetry and compliance capabilities enabled.
 
 ## Common issue: CLI says completed false
 
@@ -1708,8 +1708,8 @@ The shortest path for most third-party agents is:
 6. Add Microsoft OpenTelemetry observability
 7. Add Work IQ tools or Purview DLP if needed
 8. Validate
-9. Deploy (optional for local lab; required for production/shared runtime)
-10. Operate in Agent 365
+9. Operate in Agent 365
+10. Deploy (optional for local lab; required for production/shared runtime)
 ```
 
 The Agent 365 CLI gets the agent registered. Microsoft OpenTelemetry makes runtime activity visible. The Agent 365 SDK tooling and notification packages add deeper Microsoft 365 integration when the agent needs it. GitHub Copilot Skills are optional; they help automate the setup, but they are not the integration itself.
