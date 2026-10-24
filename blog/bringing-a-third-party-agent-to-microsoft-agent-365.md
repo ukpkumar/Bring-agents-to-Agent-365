@@ -1041,10 +1041,10 @@ Quick chooser:
 - Choose **Method 1** if you installed Agent 365 Skills and want guided prompts.
 - Choose **Method 2** if you prefer direct CLI/code changes and no skills.
 
-| Method | Best for | Uses GitHub Copilot Skills? | Uses Agent 365 SDK/OpenTelemetry? |
+| Method | Selection rule | Uses GitHub Copilot Skills? | Uses Agent 365 SDK/OpenTelemetry? |
 |---|---|---:|---:|
-| Method 1: Guided setup with Agent 365 Skills | Labs, demos, first-time onboarding, faster setup | Yes | Yes |
-| Method 2: Manual SDK path | Developers who want full control or cannot use coding assistant skills | No | Yes |
+| Method 1: Guided setup with Agent 365 Skills | Use this only when Agent 365 Skills are installed and you want skill-driven prompts/edits | Yes | Yes |
+| Method 2: Manual SDK path | Use this when Agent 365 Skills are not installed or not allowed | No | Yes |
 
 Both methods use the same underlying Agent 365 concepts:
 
@@ -1053,7 +1053,7 @@ Both methods use the same underlying Agent 365 concepts:
 - Microsoft OpenTelemetry for observability
 - Agent 365 SDK packages for tooling or notifications, if needed
 
-GitHub Copilot is not required. It only automates and guides the steps.
+GitHub Copilot Skills are optional automation. They do not change the underlying Agent 365 integration architecture.
 
 ## Method 1: Guided setup with Agent 365 Skills
 
@@ -1616,13 +1616,13 @@ https://admin.cloud.microsoft/#/agents/all
 
 Also confirm your tenant has the required licensing for telemetry visibility. Without the required Microsoft 365 E7 or Microsoft Agent 365 licensing, telemetry ingestion can succeed but product surfaces may remain empty.
 
-## Which method should you choose?
+## Method selection rule
 
-Use **Method 1** if you want a guided lab experience and are comfortable using GitHub Copilot Skills.
+Choose **Method 1** only when Agent 365 Skills are available and approved in your environment.
 
-Use **Method 2** if you want to understand exactly what the SDK and OpenTelemetry integration does, or if your organization does not allow coding-assistant skill installation.
+Choose **Method 2** in all other cases.
 
-The important point: **the SDK/OpenTelemetry path is the real integration. Copilot Skills only help automate that path.**
+Both methods use the same core integration components: Agent 365 CLI for registration and Microsoft OpenTelemetry for observability.
 
 ## Step 12: Deploy the agent
 
