@@ -16,6 +16,27 @@ AI agents are moving quickly from experiments to business-critical systems. That
 
 Microsoft Agent 365 helps answer that question by bringing agents into a unified enterprise control plane. In this post, I walk through a practical step-by-step process for bringing a third-party or custom agent into Agent 365.
 
+## Quick index
+
+- [Why bring agents to Microsoft Agent 365?](#why-bring-agents-to-microsoft-agent-365)
+- [Exercise overview](#exercise-overview)
+- [How to follow this lab](#how-to-follow-this-lab)
+- [Part 1: Build a local third-party agent](#part-1-build-a-local-third-party-agent)
+  - [Build Path A: Use the prebuilt sample agent](#build-path-a-use-the-prebuilt-sample-agent)
+  - [Build Path B: Build the sample manually](#build-path-b-build-the-sample-manually)
+- [What Agent 365 does and does not do](#what-agent-365-does-and-does-not-do)
+- [Step 1: Choose the right integration method](#step-1-choose-the-right-integration-method)
+- [Step 2: Prepare prerequisites](#step-2-prepare-prerequisites)
+- [Step 3: Install Agent 365 Skills](#step-3-install-agent-365-skills)
+- [Step 4: Confirm the agent runs before onboarding](#step-4-confirm-the-agent-runs-before-onboarding)
+- [Step 5: Choose your Agent 365 integration method](#step-5-choose-your-agent-365-integration-method)
+  - [Method 1: Guided setup with Agent 365 Skills](#method-1-guided-setup-with-agent-365-skills)
+  - [Method 2: Manual SDK path](#method-2-manual-sdk-path)
+- [Step 12: Operate in Agent 365](#step-12-operate-in-agent-365)
+- [Step 13 (Optional for production): Deploy the agent](#step-13-optional-for-production-deploy-the-agent)
+- [Common issue: CLI says completed false](#common-issue-cli-says-completed-false)
+- [Summary](#summary)
+
 ## Why bring agents to Microsoft Agent 365?
 
 Organizations are beginning to use agents across IT, sales, finance, HR, engineering, and customer operations. Many of those agents are built outside Microsoft platforms, often using open-source frameworks, third-party SDKs, or custom code. Without a control plane, these agents can become difficult for IT and security teams to manage.
