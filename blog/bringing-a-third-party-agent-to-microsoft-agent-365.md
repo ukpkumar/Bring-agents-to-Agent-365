@@ -1034,21 +1034,19 @@ The purpose is to establish a baseline. Agent 365 integration should be additive
 
 ## Step 5: Choose your Agent 365 integration method
 
-Before choosing, keep the two decisions separate:
+Pick **one** method below and complete only that method's steps.
 
-- **Part 1 (already done):** Build Path A or Build Path B
-- **Step 5 (choose now):** Method 1 or Method 2
+Quick chooser:
 
-In Step 5, pick **one** method and follow all steps in that method.
-
-There are two valid ways to continue.
+- Choose **Method 1** if you installed Agent 365 Skills and want guided prompts.
+- Choose **Method 2** if you prefer direct CLI/code changes and no skills.
 
 | Method | Best for | Uses GitHub Copilot Skills? | Uses Agent 365 SDK/OpenTelemetry? |
 |---|---|---:|---:|
 | Method 1: Guided setup with Agent 365 Skills | Labs, demos, first-time onboarding, faster setup | Yes | Yes |
 | Method 2: Manual SDK path | Developers who want full control or cannot use coding assistant skills | No | Yes |
 
-Both options use the same underlying Agent 365 concepts:
+Both methods use the same underlying Agent 365 concepts:
 
 - Agent 365 CLI for registration
 - Microsoft Entra Agent ID for identity
