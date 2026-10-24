@@ -1059,6 +1059,12 @@ GitHub Copilot Skills are optional automation. They do not change the underlying
 
 Use this path if you installed the Agent 365 Skills in Step 3.
 
+Important clarification:
+
+- In **Step 3**, you can install/select all Agent 365 skills in one pass.
+- In **Method 1 execution**, onboarding still runs in phases (setup, registration, observability, optional tools, validation).
+- Skills automate each phase, but they do not collapse the full lifecycle into a single one-click command.
+
 ### Method 1 - Step 1: Run Agent 365 setup
 
 Open the project folder in your coding assistant. The current working directory should be the agent root:
